@@ -1,4 +1,4 @@
-all : src/test.cpp
-	g++ -g -Wall -o test src/test.cpp -lpcap
+all :
+	g++ -o test src/test.cpp src/common.cpp src/ospf.cpp -lpcap
 clean :
-	rm test
+	rm test *.o
