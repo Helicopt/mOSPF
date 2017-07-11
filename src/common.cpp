@@ -23,24 +23,15 @@ void if_init() {
 			ioctl(sock, SIOCGIFFLAGS, ifreqs+i);
 			it->sock = socket(AF_INET, SOCK_RAW, 89);
 			setsockopt(it->sock, SOL_SOCKET, SO_BINDTODEVICE, ifreqs+i, sizeof(ifreq));
+			it->hello_cnt=0;
+			it->hello_itv=10;
+			it->inac_itv=40;
+			it->dd_itv=5;
+			it->s=0;
+			it->aid=0;
 			inters.push_back(it);
 		}
 	}
-}
-
-void getPack(u_char * arg, const struct pcap_pkthdr * pkthdr, const u_char * packet) {
-	int * id = (int * ) arg;
-	printf("id: %d\n", ++(*id));
-	printf("len: %d\n", pkthdr->len);
-	printf("num of bytes: %d\n", pkthdr->caplen);
-	printf("time: %s\n", ctime((const time_t *)&pkthdr->ts.tv_sec));
-	EthPack *ep = (EthPack *)packet;
-	ep->print();
-	IPPack *ipp = ep->IP();
-	ipp->print();
-	OSPFPack *opp = ipp->OSPF();
-	opp->print();
-	puts("----------------");
 }
 
 void sendPack(int socket_fd, in_addr_t dst, int len, void * data) {

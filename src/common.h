@@ -30,7 +30,7 @@ struct OSPFPack {
 				case 5: puts("LSAck");break;
 				default:puts("Unknown");
 			}
-			printf("Router ID: %u, Area ID: %u\n", rid, aid);
+			printf("Router ID: %s, Area ID: %s\n", inet_ntoa((in_addr){rid}), inet_ntoa((in_addr){aid}));
 		}
 	}
 };
@@ -50,11 +50,11 @@ struct IPPack {
 		else puts("other");
 		printf("src: %d.%d.%d.%d, dst: %d.%d.%d.%d\n",src>>24,(src>>16)&0xff,(src>>8)&0xff,src&0xff, dst>>24,(dst>>16)&0xff,(dst>>8)&0xff,dst&0xff);
 	}
-	OSPFPack * OSPF() {return (OSPFPack *)(this+20);};
+	OSPFPack * OSPF() {return (OSPFPack *)((u_char*)this+20);};
 };
 
 struct EthPack {
-	u_char src[6], dst[6];
+	u_char dst[6], src[6];
 	u_char tp[2];
 	void print() {
 		printf("source addr: ");
@@ -63,13 +63,14 @@ struct EthPack {
 		for (int i=0;i<6;++i) printf("%02x ", dst[i]);
 		printf("\n%02x %02x ...\n", tp[0], tp[1]);
 	}
-	IPPack * IP() {return (IPPack *)(this+14);};
+	IPPack * IP() {return (IPPack *)((u_char*)this+14);};
 };
 
 struct neib
 {
 	in_addr_t ip, rid;
 	int s;
+	int inac_cnt, dd_cnt;
 };
 
 struct inter
@@ -78,6 +79,8 @@ struct inter
 	int s, sock;
 	in_addr_t mask, ip, aid, dr, bdr;
 	vector<neib *> nbs;
+	int hello_cnt, hello_itv;
+	int inac_itv, dd_itv;
 };
 
 struct route
@@ -88,7 +91,6 @@ struct route
 
 
 void if_init();
-void getPack(u_char * arg, const struct pcap_pkthdr * pkthdr, const u_char * packet);
 void sendPack(int socket_fd, in_addr_t dst, int len, void * data);
 INT16 chksum_16(INT16 * d, int len);
 
