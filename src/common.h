@@ -13,10 +13,18 @@ using namespace std;
 typedef unsigned short INT16;
 typedef unsigned int INT32;
 
+enum nbstate{
+	S_DOWN, S_INIT, S_2WAY, S_ExSTART, S_ExCHANGE, S_LOADING, S_FULL
+};
+
+enum nbevent{
+	E_HELLO, E_1WAY, E_2WAY, E_AdjOK, E_NegoDONE, E_ExDONE, E_LoadDONE
+};
+
 struct OSPFPack {
 	u_char ver, tp;
 	INT16 len;
-	INT32 rid, aid;
+	in_addr_t rid, aid;
 	INT16 chksum, autp;
 	INT32 auth;
 	void print() {
@@ -69,8 +77,9 @@ struct EthPack {
 struct neib
 {
 	in_addr_t ip, rid;
-	int s;
+	nbstate s;
 	int inac_cnt, dd_cnt;
+	int pri;
 };
 
 struct inter
@@ -95,5 +104,8 @@ void sendPack(int socket_fd, in_addr_t dst, int len, void * data);
 INT16 chksum_16(INT16 * d, int len);
 
 extern vector<inter *> inters;
+
+extern in_addr_t dst, dr_dst;
+extern in_addr_t my_rid;
 
 #endif

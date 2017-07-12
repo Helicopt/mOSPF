@@ -2,8 +2,6 @@
 #include <pthread.h>
 #include <unistd.h>
 
-in_addr_t dst, dr_dst;
-
 void * send_loop(void * x) {
 	u_char buf[32768];
 	EthPack *eth = (EthPack *)buf;
@@ -23,6 +21,7 @@ void * send_loop(void * x) {
 			it->nbs = new_nbs;
 			if (it->hello_cnt==0) {
 				int len=gen_hello(ospf, it);
+				puts("send hello");
 				sendPack(it->sock,dst,len,ospf);
 			}
 			it->hello_cnt++;
@@ -67,26 +66,31 @@ void getPack(u_char * arg, const struct pcap_pkthdr * pkthdr, const u_char * pac
 	// printf("!!%02x", ipp->v_hl);
 	OSPFPack *opp = ipp->OSPF();
 	// opp->print();
-	inter * itt;
+	inter * itt=NULL;
 	if (opp->ver==2&&ipp->protocol==89) {
 		opp->print();
+		if (opp->rid==my_rid) return;
 		in_addr_t src = ipp->src;
 		if (chksum_16((INT16 *)opp, ntohs(opp->len))) return;
 		else puts("recved.");
 		puts("----------------");
 		for (size_t i=0;i<inters.size();++i) {
 			inter * it = inters[i];
-			if (ipp->src&it->mask==it->ip&it->mask) {
+			if ((ipp->src&it->mask)==(it->ip&it->mask)) {
 				itt=it;
 				break;
 			}
 		}
+		if (itt==NULL) {
+			puts("no");
+			return;
+		}
 		switch (opp->tp) {
-			case 1:deal_hello(itt, opp);break;
-			case 2:deal_dd(itt, opp);break;
-			case 3:deal_lsr(itt, opp);break;
-			case 4:deal_lsu(itt, opp);break;
-			case 5:deal_lsack(itt, opp);break;
+			case 1:deal_hello(itt, opp, src);break;
+			case 2:deal_dd(itt, opp, src);break;
+			case 3:deal_lsr(itt, opp, src);break;
+			case 4:deal_lsu(itt, opp, src);break;
+			case 5:deal_lsack(itt, opp, src);break;
 			default:puts("unknown type!");
 		}
 	}// else printf("%d\n", (ipp->protocol));
@@ -106,7 +110,8 @@ void * recv_loop(void * x) {
 }
 
 
-int main() {
+int main(int argc, char * argv[]) {
+	if (argc>0) my_rid = atoi(argv[0]); else my_rid = 1;
 	if_init();
 	if (inters.size()==0||inters[0]->sock<0) {
 		cerr<<"wrong"<<endl;

@@ -1,6 +1,8 @@
 #include "common.h"
 
 vector<inter *> inters;
+in_addr_t dst, dr_dst;
+in_addr_t my_rid;
 
 void if_init() {
 	ifconf conf;
@@ -12,7 +14,7 @@ void if_init() {
 	int cnt = conf.ifc_len/sizeof(ifreq);
 	for (int i=0;i<cnt;++i) {
 		if (strcmp(ifreqs[i].ifr_name,"lo")!=0) {
-			inter * it = new inter();
+			inter * it = (inter*)malloc(sizeof(inter));
 			strcpy(it->dn, ifreqs[i].ifr_name);
 			ioctl(sock, SIOCGIFADDR, ifreqs+i);
 			it->ip = ((sockaddr_in *)&ifreqs[i].ifr_addr)->sin_addr.s_addr;
